@@ -1,0 +1,1970 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ことのはいく - 本物のGemini AIが裁く俳句カードゲーム</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --washi-bg: #F6F3EB;
+    --washi-card: #FFFDF9;
+    --sumi-dark: #23201E;
+    --sumi-light: #5C554F;
+    --shu-red: #B8332A;
+    --shu-hover: #96261E;
+    --matcha-green: #4E6E58;
+    --ai-indigo: #2B4C65;
+    --kin-gold: #C59B27;
+    --border-ink: #D8D0C1;
+    --shadow-soft: 0 4px 12px rgba(35, 32, 30, 0.08);
+    --shadow-card: 0 3px 6px rgba(35, 32, 30, 0.12);
+    --font-serif: 'Shippori Mincho', serif;
+    --font-sans: 'Zen Kaku Gothic New', sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--washi-bg);
+    background-image: 
+      radial-gradient(rgba(197, 155, 39, 0.06) 1px, transparent 0),
+      radial-gradient(rgba(78, 110, 88, 0.05) 1px, transparent 0);
+    background-size: 32px 32px;
+    background-position: 0 0, 16px 16px;
+    color: var(--sumi-dark);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ヘッダー */
+  header {
+    width: 100%;
+    max-width: 960px;
+    padding: 16px 20px 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border-ink);
+    gap: 12px;
+  }
+
+  .title-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hanko {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--shu-red);
+    color: var(--shu-red);
+    font-family: var(--font-serif);
+    font-weight: 800;
+    font-size: 13px;
+    line-height: 1.05;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 4px;
+    transform: rotate(-3deg);
+    flex-shrink: 0;
+  }
+
+  h1 {
+    font-family: var(--font-serif);
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    color: var(--sumi-dark);
+  }
+
+  .subtitle {
+    font-size: 0.75rem;
+    color: var(--sumi-light);
+    display: block;
+    letter-spacing: 0.05em;
+  }
+
+  /* モード切替タブ */
+  .mode-switch {
+    display: flex;
+    background: #EAE4D7;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border-ink);
+  }
+
+  .mode-btn {
+    border: none;
+    background: transparent;
+    padding: 8px 14px;
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--sumi-light);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .mode-btn.active {
+    background: var(--washi-card);
+    color: var(--shu-red);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+
+  .api-status-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--border-ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+  }
+
+  .api-connected {
+    background: #E6F4EA;
+    color: #1E6E3D;
+    border-color: #A8DAB5;
+  }
+
+  .api-disconnected {
+    background: #FEF7E0;
+    color: #8C6400;
+    border-color: #F2D06B;
+  }
+
+  /* メインコンテナ */
+  main {
+    width: 100%;
+    max-width: 960px;
+    padding: 16px 20px 40px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  /* お題＆ステータスバー */
+  .status-bar {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    background: var(--washi-card);
+    border: 1px solid var(--border-ink);
+    border-left: 5px solid var(--matcha-green);
+    border-radius: 8px;
+    padding: 14px 18px;
+    box-shadow: var(--shadow-soft);
+    align-items: center;
+  }
+
+  .theme-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .theme-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--matcha-green);
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .theme-title {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--sumi-dark);
+  }
+
+  .theme-desc {
+    font-size: 0.82rem;
+    color: var(--sumi-light);
+  }
+
+  .score-summary {
+    text-align: right;
+    font-family: var(--font-serif);
+    background: #F4EFE6;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border-ink);
+  }
+
+  .score-summary span {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--sumi-light);
+  }
+
+  .score-summary strong {
+    font-size: 1.25rem;
+    color: var(--shu-red);
+  }
+
+  /* アラート・エラー通知 */
+  .toast-msg {
+    display: none;
+    background: #FDF2F2;
+    border: 1px solid var(--shu-red);
+    color: var(--shu-red);
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    align-items: center;
+    justify-content: space-between;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .toast-msg.info {
+    background: #EEF4F8;
+    border-color: var(--ai-indigo);
+    color: var(--ai-indigo);
+  }
+
+  .toast-msg.show {
+    display: flex;
+  }
+
+  /* 短冊（俳句作成エリア） */
+  .tanzaku-section {
+    background: var(--washi-card);
+    border: 1px solid var(--border-ink);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .section-title {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mora-badge {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    background: #EFECE4;
+    padding: 3px 10px;
+    border-radius: 20px;
+    color: var(--sumi-dark);
+    font-weight: 700;
+    border: 1px solid var(--border-ink);
+  }
+
+  .mora-badge.good {
+    background: #E6F0E9;
+    color: var(--matcha-green);
+    border-color: var(--matcha-green);
+  }
+
+  .tanzaku-board {
+    min-height: 92px;
+    background: linear-gradient(to right, #FAF8F2 0%, #FFFDF8 50%, #FAF8F2 100%);
+    border: 2px dashed #C8BFA8;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.2s;
+  }
+
+  .tanzaku-board.has-cards {
+    border-style: solid;
+    border-color: var(--kin-gold);
+  }
+
+  .tanzaku-placeholder {
+    color: #9A9185;
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    width: 100%;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  /* プレビュー文字列 */
+  .haiku-preview-line {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #F4EFE6;
+    border-radius: 6px;
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--sumi-dark);
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .preview-text {
+    word-break: break-all;
+  }
+
+  .clear-board-btn {
+    background: transparent;
+    border: 1px solid var(--sumi-light);
+    color: var(--sumi-light);
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .clear-board-btn:hover {
+    background: var(--sumi-light);
+    color: #fff;
+  }
+
+  /* 手札エリア */
+  .hand-section {
+    background: var(--washi-card);
+    border: 1px solid var(--border-ink);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .hand-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .hand-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 640px) {
+    .hand-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .status-bar {
+      grid-template-columns: 1fr;
+    }
+    .score-summary {
+      text-align: left;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  /* 言の葉カード */
+  .word-card {
+    position: relative;
+    background: #FFF;
+    border: 1px solid #CFC6B4;
+    border-radius: 6px;
+    padding: 10px 8px;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 68px;
+    box-shadow: var(--shadow-card);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s;
+  }
+
+  .word-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(35, 32, 30, 0.15);
+    border-color: var(--shu-red);
+  }
+
+  .word-card:active {
+    transform: translateY(0);
+  }
+
+  .tanzaku-board .word-card {
+    min-height: 56px;
+    padding: 8px 12px;
+    background: #FFFDF7;
+    border: 1.5px solid var(--kin-gold);
+  }
+
+  .word-card.discard-selected {
+    background: #FDECEA;
+    border: 2px solid var(--shu-red);
+    transform: scale(0.97);
+  }
+
+  .word-card.discard-selected::after {
+    content: "交換";
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    background: var(--shu-red);
+    color: #fff;
+    font-size: 0.65rem;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-weight: 700;
+  }
+
+  .card-tag {
+    font-size: 0.66rem;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+
+  .tag-kigo { background: #FCE8E6; color: #A52A2A; }
+  .tag-noun { background: #E8F0FE; color: #1E4E8C; }
+  .tag-verb { background: #E6F4EA; color: #1E6E3D; }
+  .tag-adj  { background: #FEF7E0; color: #8C6400; }
+  .tag-part { background: #F1F3F4; color: #5F6368; }
+
+  .card-word {
+    font-family: var(--font-serif);
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: var(--sumi-dark);
+    text-align: center;
+    line-height: 1.25;
+  }
+
+  .card-mora {
+    font-size: 0.68rem;
+    color: var(--sumi-light);
+    margin-top: 2px;
+  }
+
+  /* アクションボタン群 */
+  .btn {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    font-size: 0.92rem;
+    padding: 9px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+
+  .btn-primary {
+    background: var(--shu-red);
+    color: #fff;
+    font-size: 1.05rem;
+    padding: 13px 28px;
+    box-shadow: 0 4px 10px rgba(184, 51, 42, 0.28);
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--shu-hover);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background: #EFECE4;
+    color: var(--sumi-dark);
+    border: 1px solid #C8BFA8;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background: #E4DFD3;
+  }
+
+  .btn-exchange-active {
+    background: var(--ai-indigo);
+    color: #fff;
+  }
+
+  .submit-area {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  /* ローディング表示 */
+  .loading-overlay {
+    display: none;
+    background: var(--washi-card);
+    border: 2px solid var(--ai-indigo);
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: var(--shadow-soft);
+    animation: fadeIn 0.2s ease;
+  }
+
+  .loading-overlay.show {
+    display: block;
+  }
+
+  .spinner {
+    width: 34px;
+    height: 34px;
+    border: 4px solid #E3EDF5;
+    border-top-color: var(--ai-indigo);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+    margin: 0 auto 12px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* 結果モーダル / パネル */
+  .result-panel {
+    display: none;
+    background: var(--washi-card);
+    border: 2px solid var(--kin-gold);
+    border-radius: 12px;
+    padding: 22px;
+    box-shadow: 0 10px 30px rgba(35, 32, 30, 0.16);
+    animation: slideUp 0.35s ease;
+  }
+
+  .result-panel.show {
+    display: block;
+  }
+
+  .result-header {
+    text-align: center;
+    border-bottom: 1px solid var(--border-ink);
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+  }
+
+  .engine-tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #E3EDF5;
+    color: var(--ai-indigo);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .result-rank {
+    display: inline-block;
+    font-family: var(--font-serif);
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #fff;
+    background: var(--shu-red);
+    padding: 3px 14px;
+    border-radius: 20px;
+    margin-bottom: 6px;
+  }
+
+  .result-score-big {
+    font-family: var(--font-serif);
+    font-size: 2.6rem;
+    font-weight: 800;
+    color: var(--sumi-dark);
+    line-height: 1.1;
+  }
+
+  .result-score-big small {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--sumi-light);
+  }
+
+  .submitted-haiku-display {
+    font-family: var(--font-serif);
+    font-size: 1.45rem;
+    font-weight: 800;
+    text-align: center;
+    background: #F6F2E9;
+    padding: 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border-left: 4px solid var(--shu-red);
+    border-right: 4px solid var(--shu-red);
+    letter-spacing: 0.1em;
+  }
+
+  /* 評価内訳グリッド */
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .breakdown-item {
+    background: #FAF8F3;
+    border: 1px solid var(--border-ink);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .breakdown-item .label {
+    font-size: 0.76rem;
+    color: var(--sumi-light);
+    display: block;
+  }
+
+  .breakdown-item .val {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--matcha-green);
+  }
+
+  .ai-comment-box {
+    background: #F2F5F7;
+    border-left: 4px solid var(--ai-indigo);
+    padding: 14px 16px;
+    border-radius: 6px;
+    font-size: 0.94rem;
+    margin-bottom: 16px;
+    line-height: 1.7;
+  }
+
+  .ai-comment-title {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    color: var(--ai-indigo);
+    margin-bottom: 4px;
+    font-size: 0.96rem;
+  }
+
+  /* 対決モード用エリア */
+  .battle-comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  @media (max-width: 640px) {
+    .battle-comparison {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .battle-card {
+    border: 1.5px solid var(--border-ink);
+    border-radius: 8px;
+    padding: 14px;
+    background: #FFF;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .battle-card.winner {
+    border-color: var(--kin-gold);
+    background: #FFFDF5;
+    box-shadow: 0 0 0 2px rgba(197, 155, 39, 0.25);
+  }
+
+  .battle-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    margin-bottom: 6px;
+    align-self: flex-start;
+  }
+
+  .badge-player { background: #FCE8E6; color: var(--shu-red); }
+  .badge-ai { background: #E3EDF5; color: var(--ai-indigo); }
+
+  .battle-haiku {
+    font-family: var(--font-serif);
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 6px 0;
+    min-height: 2.4em;
+  }
+
+  .battle-pts {
+    font-family: var(--font-serif);
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .ai-hand-reveal {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-ink);
+    font-size: 0.76rem;
+    color: var(--sumi-light);
+  }
+
+  .ai-hand-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
+  .ai-chip {
+    background: #F1F4F8;
+    border: 1px solid #D0DCE6;
+    color: var(--ai-indigo);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-family: var(--font-serif);
+  }
+
+  .ai-chip.used {
+    background: var(--ai-indigo);
+    color: #fff;
+    border-color: var(--ai-indigo);
+    font-weight: 700;
+  }
+
+  .winner-banner {
+    text-align: center;
+    font-family: var(--font-serif);
+    font-size: 1.3rem;
+    font-weight: 800;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+  }
+
+  .win-player { background: #FDF3D7; color: #8A6200; border: 1px solid var(--kin-gold); }
+  .win-ai { background: #E8EEF5; color: var(--ai-indigo); border: 1px solid var(--ai-indigo); }
+  .win-draw { background: #EFECE4; color: var(--sumi-dark); }
+
+  /* モーダル共通 */
+  .modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(35, 32, 30, 0.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .modal-backdrop.show {
+    display: flex;
+  }
+
+  .modal-content {
+    background: var(--washi-card);
+    border: 2px solid var(--border-ink);
+    border-radius: 10px;
+    max-width: 540px;
+    width: 100%;
+    padding: 22px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+  }
+
+  .modal-content h2 {
+    font-family: var(--font-serif);
+    font-size: 1.3rem;
+    border-bottom: 1px solid var(--border-ink);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+    color: var(--shu-red);
+  }
+
+  .modal-content ul {
+    padding-left: 20px;
+    margin-bottom: 16px;
+    font-size: 0.92rem;
+  }
+
+  .modal-content li {
+    margin-bottom: 8px;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 700;
+    font-size: 0.88rem;
+    margin-bottom: 4px;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #C8BFA8;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-family: monospace;
+    background: #FFF;
+  }
+
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--ai-indigo);
+  }
+
+  .help-note {
+    font-size: 0.8rem;
+    color: var(--sumi-light);
+    background: #F4EFE6;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 14px;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-area">
+    <div class="hanko">言葉<br>俳句</div>
+    <div>
+      <h1>ことのはいく</h1>
+      <span class="subtitle">限られた言の葉で風情と笑いを詠む</span>
+    </div>
+  </div>
+  <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+    <div class="mode-switch" role="tablist">
+      <button class="mode-btn active" id="btnModeSolo" onclick="switchMode('solo')">判定モード</button>
+      <button class="mode-btn" id="btnModeBattle" onclick="switchMode('battle')">AI対決モード</button>
+    </div>
+    <button class="api-status-badge api-disconnected" id="btnApiStatus" onclick="toggleApiModal(true)">
+      ● Gemini API未設定
+    </button>
+    <button class="btn btn-secondary" style="padding:7px 12px; font-size:0.82rem;" onclick="toggleHelp(true)">遊び方</button>
+  </div>
+</header>
+
+<main>
+  <!-- お題・戦績バー -->
+  <section class="status-bar">
+    <div class="theme-box">
+      <div class="theme-label">本日の御題（おだい）</div>
+      <div class="theme-title" id="themeTitle">読み込み中...</div>
+      <div class="theme-desc" id="themeDesc"></div>
+    </div>
+    <div class="score-summary" id="scoreSummary">
+      <span>最高記録</span>
+      <strong id="highScoreDisplay">0 点</strong>
+    </div>
+  </section>
+
+  <!-- エラー・警告通知 -->
+  <div class="toast-msg" id="toastMsg" role="alert">
+    <span id="toastText"></span>
+    <button onclick="hideToast()" style="background:none;border:none;color:inherit;font-weight:bold;cursor:pointer;font-size:1.1rem;">×</button>
+  </div>
+
+  <!-- 短冊（句を並べるエリア） -->
+  <section class="tanzaku-section">
+    <div class="section-header">
+      <div class="section-title">
+        <span>短冊（タップで手札に戻す）</span>
+        <span class="mora-badge" id="moraCounter">現在 0 音（目安: 17音前後）</span>
+      </div>
+      <button class="clear-board-btn" onclick="returnAllToHand()">すべて手札に戻す</button>
+    </div>
+
+    <div class="tanzaku-board" id="tanzakuBoard">
+      <div class="tanzaku-placeholder" id="tanzakuPlaceholder">下の「手札」から言葉をタップして並べてください</div>
+    </div>
+
+    <div class="haiku-preview-line">
+      <div class="preview-text" id="previewText">（ここに詠んだ句が表示されます）</div>
+    </div>
+  </section>
+
+  <!-- 手札エリア -->
+  <section class="hand-section">
+    <div class="section-header">
+      <div class="section-title">
+        <span id="handTitle">手札（タップで短冊へ）</span>
+      </div>
+      <div class="hand-controls">
+        <button class="btn btn-secondary" id="btnToggleDiscard" onclick="toggleDiscardMode()">手札入れ替え（残1回）</button>
+        <button class="btn btn-secondary" id="btnDiscardAll" style="display:none;" onclick="selectAllForDiscard()">全選択</button>
+        <button class="btn btn-exchange-active" id="btnConfirmDiscard" style="display:none;" onclick="confirmDiscard()">選択カードを交換確定</button>
+      </div>
+    </div>
+    <div class="hand-grid" id="handGrid"></div>
+  </section>
+
+  <!-- 提出ボタン -->
+  <div class="submit-area">
+    <button class="btn btn-primary" id="btnSubmit" onclick="submitHaiku()">この一句を詠む（AI判定）</button>
+    <button class="btn btn-secondary" onclick="startNewRound()">次のお題・新しい手札へ</button>
+  </div>
+
+  <!-- Gemini通信中ローディング -->
+  <section class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div style="font-family:var(--font-serif); font-weight:700; font-size:1.1rem; color:var(--ai-indigo);" id="loadingText">
+      Gemini宗匠が一句を吟味しております…
+    </div>
+    <div style="font-size:0.82rem; color:var(--sumi-light); margin-top:4px;">
+      風情・面白さ・韻・お題との調和をリアルタイム解析中
+    </div>
+  </section>
+
+  <!-- AI判定結果エリア -->
+  <section class="result-panel" id="resultPanel">
+    <div class="result-header">
+      <div><span class="engine-tag" id="engineUsedTag">Gemini 2.5 Flash 判定</span></div>
+      <div class="result-rank" id="resultRank">秀逸</div>
+      <div class="result-score-big" id="resultScore">88 <small>点</small></div>
+    </div>
+
+    <!-- 対決モード用勝敗表示 -->
+    <div id="battleResultArea" style="display:none;">
+      <div class="winner-banner" id="winnerBanner">あなたの勝利！</div>
+      <div class="battle-comparison">
+        <div class="battle-card" id="playerBattleCard">
+          <div>
+            <span class="battle-badge badge-player">あなたの一句</span>
+            <div class="battle-haiku" id="battlePlayerHaiku"></div>
+          </div>
+          <div class="battle-pts" id="battlePlayerPts"></div>
+        </div>
+        <div class="battle-card" id="aiBattleCard">
+          <div>
+            <span class="battle-badge badge-ai">Gemini宗匠の一句（別手札）</span>
+            <div class="battle-haiku" id="battleAiHaiku"></div>
+            <div class="battle-pts" id="battleAiPts"></div>
+          </div>
+          <div class="ai-hand-reveal">
+            <div>AIに配られていた手札（色付きが使用札）：</div>
+            <div class="ai-hand-chips" id="aiHandChips"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="submitted-haiku-display" id="submittedHaikuDisplay"></div>
+
+    <div class="breakdown-grid" id="breakdownGrid"></div>
+
+    <div class="ai-comment-box">
+      <div class="ai-comment-title">宗匠の選評・ツッコミ</div>
+      <div id="aiCommentText"></div>
+    </div>
+
+    <div style="text-align:center;">
+      <button class="btn btn-primary" onclick="startNewRound()">次のお題に挑戦する</button>
+    </div>
+  </section>
+</main>
+
+<!-- Gemini APIキー設定モーダル -->
+<div class="modal-backdrop" id="apiModal" onclick="if(event.target===this) toggleApiModal(false)">
+  <div class="modal-content">
+    <h2>Gemini API キー設定</h2>
+    <div class="help-note">
+      Google AI Studio で取得した <strong>Gemini APIキー</strong> を入力すると、本物のGemini AIがどんな無茶苦茶な句でも文脈を読み取って採点・ツッコミ・対決を行います。<br>
+      ※キーはあなたのブラウザ内（localStorage）にのみ保存され、外部サーバー等には一切送信されません。未入力の場合は内蔵の擬似AIで動作します。
+    </div>
+    <div class="form-group">
+      <label for="apiKeyInput">Gemini API Key（AIzaSy...）</label>
+      <input type="password" id="apiKeyInput" placeholder="AIzaSy..." autocomplete="off">
+    </div>
+    <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="clearApiKey()">キーを削除（擬似AIに戻す）</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-secondary" onclick="toggleApiModal(false)">キャンセル</button>
+        <button class="btn btn-primary" style="padding:9px 20px; font-size:0.92rem;" onclick="saveApiKey()">保存して接続</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 遊び方モーダル -->
+<div class="modal-backdrop" id="helpModal" onclick="if(event.target===this) toggleHelp(false)">
+  <div class="modal-content">
+    <h2>「ことのはいく」の遊び方</h2>
+    <ul>
+      <li><strong>基本ルール：</strong>配られた10枚の「言の葉カード」から自由に選び、並べ替えて俳句（川柳・自由律も可）を作ります。10枚すべて使う必要はありません。</li>
+      <li><strong>手札入れ替え：</strong>各ラウンド1回だけ、不要なカードを選んで新しい言葉と交換できます（全交換も可能）。</li>
+      <li><strong>本物のGemini AI判定：</strong>右上の「Gemini API」ボタンからAPIキーを設定すると、言葉のシュールな組み合わせや隠れた意味、韻の踏み方までAIがリアルに読み取ってツッコミを入れてくれます！</li>
+      <li><strong>AI対決モード：</strong>あなたとAI宗匠に<strong>それぞれ別の10枚</strong>が配られます。Gemini AIも自分の10枚だけを使って本気で句を詠み、点数勝負をします。</li>
+    </ul>
+    <div style="text-align:right;">
+      <button class="btn btn-primary" style="padding:8px 20px; font-size:0.9rem;" onclick="toggleHelp(false)">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // --- お題データベース（全20種） ---
+  const THEMES = [
+    { title: "春の陽気と食い気", desc: "花より団子？うららかな春の日に食べたいもの・したいこと", keywords: ["桜", "春風", "団子", "花見", "蝶", "菜の花", "霞", "うらら", "食べる", "食べて", "甘い", "眠い", "昼寝"] },
+    { title: "切なき恋心", desc: "言葉にできない想い、すれ違う二人の情景", keywords: ["君", "僕", "恋", "涙", "名月", "夜風", "見つめる", "見る", "切ない", "遠い", "影", "星", "儚い", "消える", "スマホ"] },
+    { title: "真夏の夜の怪異", desc: "蒸し暑い夜、背筋がひんやりする不思議な出来事", keywords: ["花火", "風鈴", "幽霊", "闇", "冷たい", "消える", "光る", "蝉", "怪しい", "走る", "影", "月光", "叫ぶ"] },
+    { title: "哀愁のサラリーマン", desc: "現代の悲哀や、仕事終わりのふとした瞬間の生活感", keywords: ["電車", "コーヒー", "残業", "ため息", "財布", "明日", "時計", "疲れた", "急ぐ", "雨", "傘", "焼き肉", "ビール"] },
+    { title: "秋の夜長と食欲", desc: "虫の音を聞きながら味わう秋の味覚と静けさ", keywords: ["紅葉", "名月", "サンマ", "栗", "虫の声", "静かな", "食べる", "食べて", "美味しい", "赤い", "秋風", "焼き芋"] },
+    { title: "冬の朝とぬくもり", desc: "凍える寒さの中で感じる、ささやかな温かさ", keywords: ["初雪", "こたつ", "みかん", "白い", "寒い", "温かい", "猫", "眠る", "鍋", "湯気", "木枯らし", "毛布"] },
+    { title: "推しが尊すぎる夜", desc: "画面の向こうの存在に心を奪われ、語彙力を失う瞬間", keywords: ["推し", "尊い", "光る", "輝く", "涙", "スマホ", "夢", "宇宙", "叫ぶ", "愛しい", "星", "心臓", "眠れない"] },
+    { title: "深夜の飯テロ・背徳感", desc: "寝る前なのに食べてしまう罪深き美味しさ", keywords: ["ラーメン", "プリン", "焼き肉", "背徳感", "甘い", "食べて", "食べる", "溶ける", "夜風", "時計", "罪深い", "幸せ"] },
+    { title: "デジタル社会の孤独", desc: "繋がっているはずなのにどこか遠い、現代の風景", keywords: ["Wi-Fi", "スマホ", "通知", "画面", "静かな", "遠い", "光る", "影", "僕", "誰か", "宇宙", "ため息"] },
+    { title: "猫の気まぐれな一日", desc: "人間を翻弄する自由気ままな猫たちの姿", keywords: ["猫", "昼寝", "こたつ", "窓辺", "眠い", "静かな", "走る", "見上げる", "尻尾", "春風", "陽だまり"] },
+    { title: "旅立ちと別れのホーム", desc: "新しい世界へ踏み出す期待と、少しの寂しさ", keywords: ["電車", "桜", "春風", "遠い", "空", "君", "僕", "涙", "明日", "走る", "夢", "切ない"] },
+    { title: "雨音のメロディ", desc: "しとしと降る雨や突然の夕立が織りなす情景", keywords: ["夕立", "傘", "紫陽花", "降る", "冷たい", "光る", "街灯", "静かな", "雲", "溶ける", "水たまり"] },
+    { title: "異世界・ファンタジー冒険譚", desc: "剣と魔法、未知なる世界へ飛び込むワクワク感", keywords: ["ドラゴン", "勇者", "魔法", "冒険", "光る", "叫ぶ", "走る", "宇宙", "星", "謎", "爆発する", "夢"] },
+    { title: "休日の二度寝天国", desc: "目覚ましを止めて布団に潜り込む至福のひととき", keywords: ["毛布", "昼寝", "眠い", "眠る", "幸せ", "時計", "温かい", "猫", "夢", "こたつ", "溶ける"] },
+    { title: "祭りのあとの静けさ", desc: "賑やかな花火や屋台の熱気が去ったあとの余韻", keywords: ["花火", "風鈴", "夜風", "消える", "遠い", "切ない", "星", "浴衣", "影", "静かな", "夏祭り"] },
+    { title: "忍者・時代劇ロマン", desc: "月夜の屋根を駆ける影、粋でいなせな和の世界", keywords: ["忍者", "名月", "月光", "影", "走る", "消える", "刀", "風", "赤い", "闇", "怪しい"] },
+    { title: "宇宙の果てのロマンス", desc: "銀河を旅する孤独な飛行士と星のきらめき", keywords: ["宇宙", "星", "地球", "光る", "遠い", "夢", "静かな", "浮遊する", "涙", "名月", "無限"] },
+    { title: "銭湯と湯上がりの一杯", desc: "熱いお湯で疲れを流し、夜風に吹かれる極楽気分", keywords: ["湯気", "夜風", "ビール", "温かい", "冷たい", "幸せ", "ため息", "名月", "星", "溶ける"] },
+    { title: "青春の放課後", desc: "夕焼けに染まる教室と、他愛もないおしゃべり", keywords: ["夕焼け", "自転車", "君", "僕", "笑う", "走る", "青春", "赤い", "遠い", "風", "明日"] },
+    { title: "カオス自由題：言葉の化学反応", desc: "常識を破壊せよ！最も意外で面白い組み合わせが勝つ！", keywords: ["恐竜", "忍者", "プリン", "爆発する", "踊る", "叫ぶ", "宇宙", "財布", "残業", "ドラゴン", "魔法"] }
+  ];
+
+  // --- 言の葉カードプール（全155種） ---
+  const WORD_POOL = [
+    // 【季語・春】(10)
+    { word: "桜", reading: "さくら", mora: 3, type: "kigo", label: "季語・春", elegance: 9, humor: 2 },
+    { word: "春風", reading: "はるかぜ", mora: 4, type: "kigo", label: "季語・春", elegance: 8, humor: 1 },
+    { word: "花見", reading: "はなみ", mora: 3, type: "kigo", label: "季語・春", elegance: 7, humor: 4 },
+    { word: "蝶", reading: "ちょう", mora: 2, type: "kigo", label: "季語・春", elegance: 8, humor: 2 },
+    { word: "菜の花", reading: "なのはな", mora: 4, type: "kigo", label: "季語・春", elegance: 8, humor: 2 },
+    { word: "霞", reading: "かすみ", mora: 3, type: "kigo", label: "季語・春", elegance: 9, humor: 1 },
+    { word: "陽だまり", reading: "ひだまり", mora: 4, type: "kigo", label: "季語・春", elegance: 8, humor: 2 },
+    { word: "うらら", reading: "うらら", mora: 3, type: "kigo", label: "季語・春", elegance: 8, humor: 3 },
+    { word: "若葉", reading: "わかば", mora: 3, type: "kigo", label: "季語・春", elegance: 8, humor: 2 },
+    { word: "春眠", reading: "しゅんみん", mora: 4, type: "kigo", label: "季語・春", elegance: 8, humor: 4 },
+
+    // 【季語・夏】(10)
+    { word: "花火", reading: "はなび", mora: 3, type: "kigo", label: "季語・夏", elegance: 9, humor: 3 },
+    { word: "蝉", reading: "せみ", mora: 2, type: "kigo", label: "季語・夏", elegance: 6, humor: 5 },
+    { word: "風鈴", reading: "ふうりん", mora: 4, type: "kigo", label: "季語・夏", elegance: 9, humor: 2 },
+    { word: "夕立", reading: "ゆうだち", mora: 4, type: "kigo", label: "季語・夏", elegance: 8, humor: 3 },
+    { word: "紫陽花", reading: "あじさい", mora: 4, type: "kigo", label: "季語・夏", elegance: 9, humor: 1 },
+    { word: "浴衣", reading: "ゆかた", mora: 3, type: "kigo", label: "季語・夏", elegance: 8, humor: 3 },
+    { word: "夏祭り", reading: "なつまつり", mora: 5, type: "kigo", label: "季語・夏", elegance: 8, humor: 4 },
+    { word: "向日葵", reading: "ひまわり", mora: 4, type: "kigo", label: "季語・夏", elegance: 8, humor: 3 },
+    { word: "入道雲", reading: "にゅうどうぐも", mora: 6, type: "kigo", label: "季語・夏", elegance: 8, humor: 3 },
+    { word: "スイカ", reading: "すいか", mora: 3, type: "kigo", label: "季語・夏", elegance: 5, humor: 6 },
+
+    // 【季語・秋】(10)
+    { word: "名月", reading: "めいげつ", mora: 4, type: "kigo", label: "季語・秋", elegance: 10, humor: 1 },
+    { word: "紅葉", reading: "もみじ", mora: 3, type: "kigo", label: "季語・秋", elegance: 9, humor: 2 },
+    { word: "サンマ", reading: "さんま", mora: 3, type: "kigo", label: "季語・秋", elegance: 5, humor: 7 },
+    { word: "虫の声", reading: "むしのこえ", mora: 5, type: "kigo", label: "季語・秋", elegance: 9, humor: 1 },
+    { word: "秋風", reading: "あきかぜ", mora: 4, type: "kigo", label: "季語・秋", elegance: 9, humor: 1 },
+    { word: "焼き芋", reading: "やきいも", mora: 4, type: "kigo", label: "季語・秋", elegance: 5, humor: 7 },
+    { word: "金木犀", reading: "きんもくせい", mora: 6, type: "kigo", label: "季語・秋", elegance: 10, humor: 1 },
+    { word: "ススキ", reading: "すすき", mora: 3, type: "kigo", label: "季語・秋", elegance: 8, humor: 2 },
+    { word: "栗", reading: "くり", mora: 2, type: "kigo", label: "季語・秋", elegance: 6, humor: 5 },
+    { word: "夕焼け", reading: "ゆうやけ", mora: 4, type: "kigo", label: "季語・秋", elegance: 9, humor: 2 },
+
+    // 【季語・冬】(10)
+    { word: "初雪", reading: "はつゆき", mora: 4, type: "kigo", label: "季語・冬", elegance: 9, humor: 2 },
+    { word: "こたつ", reading: "こたつ", mora: 3, type: "kigo", label: "季語・冬", elegance: 5, humor: 7 },
+    { word: "みかん", reading: "みかん", mora: 3, type: "kigo", label: "季語・冬", elegance: 5, humor: 6 },
+    { word: "木枯らし", reading: "こがらし", mora: 4, type: "kigo", label: "季語・冬", elegance: 8, humor: 2 },
+    { word: "鍋", reading: "なべ", mora: 2, type: "kigo", label: "季語・冬", elegance: 5, humor: 6 },
+    { word: "除夜の鐘", reading: "じょやのかね", mora: 5, type: "kigo", label: "季語・冬", elegance: 9, humor: 3 },
+    { word: "白い息", reading: "しろいいき", mora: 5, type: "kigo", label: "季語・冬", elegance: 9, humor: 2 },
+    { word: "霜柱", reading: "しもばしら", mora: 5, type: "kigo", label: "季語・冬", elegance: 8, humor: 3 },
+    { word: "雪だるま", reading: "ゆきだるま", mora: 5, type: "kigo", label: "季語・冬", elegance: 6, humor: 6 },
+    { word: "師走", reading: "しわす", mora: 3, type: "kigo", label: "季語・冬", elegance: 8, humor: 4 },
+
+    // 【名詞・情緒＆自然】(22)
+    { word: "君", reading: "きみ", mora: 2, type: "noun", label: "名詞", elegance: 6, humor: 3 },
+    { word: "僕", reading: "ぼく", mora: 2, type: "noun", label: "名詞", elegance: 5, humor: 4 },
+    { word: "涙", reading: "なみだ", mora: 3, type: "noun", label: "名詞", elegance: 8, humor: 2 },
+    { word: "夜風", reading: "よかぜ", mora: 3, type: "noun", label: "名詞", elegance: 9, humor: 1 },
+    { word: "夢", reading: "ゆめ", mora: 2, type: "noun", label: "名詞", elegance: 8, humor: 3 },
+    { word: "影", reading: "かげ", mora: 2, type: "noun", label: "名詞", elegance: 8, humor: 3 },
+    { word: "星", reading: "ほし", mora: 2, type: "noun", label: "名詞", elegance: 9, humor: 2 },
+    { word: "月光", reading: "げっこう", mora: 4, type: "noun", label: "名詞", elegance: 10, humor: 2 },
+    { word: "傘", reading: "かさ", mora: 2, type: "noun", label: "名詞", elegance: 7, humor: 3 },
+    { word: "街灯", reading: "がいとう", mora: 4, type: "noun", label: "名詞", elegance: 7, humor: 2 },
+    { word: "水たまり", reading: "みずたまり", mora: 5, type: "noun", label: "名詞", elegance: 7, humor: 3 },
+    { word: "空", reading: "そら", mora: 2, type: "noun", label: "名詞", elegance: 8, humor: 2 },
+    { word: "雲", reading: "くも", mora: 2, type: "noun", label: "名詞", elegance: 8, humor: 2 },
+    { word: "明日", reading: "あした", mora: 3, type: "noun", label: "名詞", elegance: 7, humor: 3 },
+    { word: "青春", reading: "せいしゅん", mora: 4, type: "noun", label: "名詞", elegance: 7, humor: 4 },
+    { word: "恋", reading: "こい", mora: 2, type: "noun", label: "名詞", elegance: 8, humor: 3 },
+    { word: "心臓", reading: "しんぞう", mora: 4, type: "noun", label: "名詞", elegance: 5, humor: 6 },
+    { word: "湯気", reading: "ゆげ", mora: 2, type: "noun", label: "名詞", elegance: 7, humor: 4 },
+    { word: "自転車", reading: "じてんしゃ", mora: 4, type: "noun", label: "名詞", elegance: 6, humor: 4 },
+    { word: "窓辺", reading: "まどべ", mora: 3, type: "noun", label: "名詞", elegance: 8, humor: 2 },
+    { word: "地球", reading: "ちきゅう", mora: 4, type: "noun", label: "名詞", elegance: 6, humor: 6 },
+    { word: "闇", reading: "やみ", mora: 2, type: "noun", label: "名詞", elegance: 7, humor: 5 },
+
+    // 【名詞・現代＆飯テロ＆カオス】(26)
+    { word: "団子", reading: "だんご", mora: 3, type: "noun", label: "名詞", elegance: 4, humor: 8 },
+    { word: "猫", reading: "ねこ", mora: 2, type: "noun", label: "名詞", elegance: 6, humor: 7 },
+    { word: "電車", reading: "でんしゃ", mora: 4, type: "noun", label: "名詞", elegance: 3, humor: 6 },
+    { word: "コーヒー", reading: "こーひー", mora: 4, type: "noun", label: "名詞", elegance: 4, humor: 5 },
+    { word: "財布", reading: "さいふ", mora: 3, type: "noun", label: "名詞", elegance: 1, humor: 9 },
+    { word: "宇宙", reading: "うちゅう", mora: 3, type: "noun", label: "名詞", elegance: 5, humor: 9 },
+    { word: "プリン", reading: "ぷりん", mora: 3, type: "noun", label: "名詞", elegance: 2, humor: 9 },
+    { word: "忍者", reading: "にんじゃ", mora: 3, type: "noun", label: "名詞", elegance: 3, humor: 10 },
+    { word: "時計", reading: "とけい", mora: 3, type: "noun", label: "名詞", elegance: 4, humor: 5 },
+    { word: "ため息", reading: "ためいき", mora: 4, type: "noun", label: "名詞", elegance: 5, humor: 6 },
+    { word: "残業", reading: "ざんぎょう", mora: 4, type: "noun", label: "名詞", elegance: 1, humor: 10 },
+    { word: "推し", reading: "おし", mora: 2, type: "noun", label: "名詞", elegance: 3, humor: 9 },
+    { word: "スマホ", reading: "すまほ", mora: 3, type: "noun", label: "名詞", elegance: 1, humor: 8 },
+    { word: "Wi-Fi", reading: "わいふぁい", mora: 4, type: "noun", label: "名詞", elegance: 1, humor: 10 },
+    { word: "ラーメン", reading: "らーめん", mora: 4, type: "noun", label: "名詞", elegance: 2, humor: 9 },
+    { word: "焼き肉", reading: "やきにく", mora: 4, type: "noun", label: "名詞", elegance: 2, humor: 9 },
+    { word: "ビール", reading: "びーる", mora: 3, type: "noun", label: "名詞", elegance: 3, humor: 8 },
+    { word: "背徳感", reading: "はいとくかん", mora: 6, type: "noun", label: "名詞", elegance: 4, humor: 9 },
+    { word: "恐竜", reading: "きょうりゅう", mora: 4, type: "noun", label: "名詞", elegance: 2, humor: 10 },
+    { word: "ドラゴン", reading: "どらごん", mora: 4, type: "noun", label: "名詞", elegance: 3, humor: 9 },
+    { word: "魔法", reading: "まほう", mora: 3, type: "noun", label: "名詞", elegance: 6, humor: 7 },
+    { word: "勇者", reading: "ゆうしゃ", mora: 3, type: "noun", label: "名詞", elegance: 4, humor: 8 },
+    { word: "幽霊", reading: "ゆうれい", mora: 4, type: "noun", label: "名詞", elegance: 4, humor: 8 },
+    { word: "毛布", reading: "もうふ", mora: 3, type: "noun", label: "名詞", elegance: 5, humor: 6 },
+    { word: "昼寝", reading: "ひるね", mora: 3, type: "noun", label: "名詞", elegance: 5, humor: 7 },
+    { word: "通知", reading: "つうち", mora: 3, type: "noun", label: "名詞", elegance: 2, humor: 7 },
+
+    // 【動詞・動詞活用】(26)
+    { word: "見る", reading: "みる", mora: 2, type: "verb", label: "動詞", elegance: 5, humor: 3 },
+    { word: "見つめる", reading: "みつめる", mora: 4, type: "verb", label: "動詞", elegance: 7, humor: 2 },
+    { word: "見上げる", reading: "みあげる", mora: 4, type: "verb", label: "動詞", elegance: 8, humor: 2 },
+    { word: "食べる", reading: "たべる", mora: 3, type: "verb", label: "動詞", elegance: 3, humor: 7 },
+    { word: "食べて", reading: "たべて", mora: 3, type: "verb", label: "動詞", elegance: 3, humor: 7 },
+    { word: "走る", reading: "はしる", mora: 3, type: "verb", label: "動詞", elegance: 4, humor: 6 },
+    { word: "消える", reading: "きえる", mora: 3, type: "verb", label: "動詞", elegance: 7, humor: 4 },
+    { word: "踊る", reading: "おどる", mora: 3, type: "verb", label: "動詞", elegance: 5, humor: 8 },
+    { word: "眠る", reading: "ねむる", mora: 3, type: "verb", label: "動詞", elegance: 6, humor: 5 },
+    { word: "光る", reading: "ひかる", mora: 3, type: "verb", label: "動詞", elegance: 7, humor: 4 },
+    { word: "輝く", reading: "かがやく", mora: 4, type: "verb", label: "動詞", elegance: 8, humor: 4 },
+    { word: "叫ぶ", reading: "さけぶ", mora: 3, type: "verb", label: "動詞", elegance: 3, humor: 9 },
+    { word: "溶ける", reading: "とける", mora: 3, type: "verb", label: "動詞", elegance: 6, humor: 6 },
+    { word: "迷う", reading: "まよう", mora: 3, type: "verb", label: "動詞", elegance: 7, humor: 4 },
+    { word: "笑う", reading: "わらう", mora: 3, type: "verb", label: "動詞", elegance: 5, humor: 7 },
+    { word: "降る", reading: "ふる", mora: 2, type: "verb", label: "動詞", elegance: 8, humor: 2 },
+    { word: "急ぐ", reading: "いそぐ", mora: 3, type: "verb", label: "動詞", elegance: 4, humor: 6 },
+    { word: "飛ぶ", reading: "とぶ", mora: 2, type: "verb", label: "動詞", elegance: 6, humor: 6 },
+    { word: "揺れる", reading: "ゆれる", mora: 3, type: "verb", label: "動詞", elegance: 8, humor: 3 },
+    { word: "染まる", reading: "そまる", mora: 3, type: "verb", label: "動詞", elegance: 8, humor: 2 },
+    { word: "爆発する", reading: "ばくはつする", mora: 6, type: "verb", label: "動詞", elegance: 1, humor: 10 },
+    { word: "浮遊する", reading: "ふゆうする", mora: 5, type: "verb", label: "動詞", elegance: 5, humor: 8 },
+    { word: "散る", reading: "ちる", mora: 2, type: "verb", label: "動詞", elegance: 9, humor: 2 },
+    { word: "咲く", reading: "さく", mora: 2, type: "verb", label: "動詞", elegance: 9, humor: 2 },
+    { word: "泣く", reading: "なく", mora: 2, type: "verb", label: "動詞", elegance: 7, humor: 4 },
+    { word: "疲れた", reading: "つかれた", mora: 4, type: "verb", label: "動詞", elegance: 3, humor: 8 },
+
+    // 【形容詞・形容動詞】(21)
+    { word: "甘い", reading: "あまい", mora: 3, type: "adj", label: "形容詞", elegance: 5, humor: 6 },
+    { word: "切ない", reading: "せつない", mora: 4, type: "adj", label: "形容詞", elegance: 8, humor: 2 },
+    { word: "冷たい", reading: "つめたい", mora: 4, type: "adj", label: "形容詞", elegance: 7, humor: 3 },
+    { word: "静かな", reading: "しずかな", mora: 4, type: "adj", label: "形容詞", elegance: 9, humor: 1 },
+    { word: "怪しい", reading: "あやしい", mora: 4, type: "adj", label: "形容詞", elegance: 4, humor: 9 },
+    { word: "眠い", reading: "ねむい", mora: 3, type: "adj", label: "形容詞", elegance: 3, humor: 8 },
+    { word: "遠い", reading: "とおい", mora: 3, type: "adj", label: "形容詞", elegance: 8, humor: 2 },
+    { word: "赤い", reading: "あかい", mora: 3, type: "adj", label: "形容詞", elegance: 7, humor: 3 },
+    { word: "白い", reading: "しろい", mora: 3, type: "adj", label: "形容詞", elegance: 8, humor: 2 },
+    { word: "温かい", reading: "あたたかい", mora: 5, type: "adj", label: "形容詞", elegance: 7, humor: 4 },
+    { word: "寒い", reading: "さむい", mora: 3, type: "adj", label: "形容詞", elegance: 6, humor: 4 },
+    { word: "尊い", reading: "とうとい", mora: 4, type: "adj", label: "形容詞", elegance: 6, humor: 9 },
+    { word: "儚い", reading: "はかない", mora: 4, type: "adj", label: "形容詞", elegance: 10, humor: 2 },
+    { word: "美味しい", reading: "おいしい", mora: 4, type: "adj", label: "形容詞", elegance: 4, humor: 7 },
+    { word: "幸せ", reading: "しあわせ", mora: 4, type: "adj", label: "形容詞", elegance: 7, humor: 5 },
+    { word: "愛しい", reading: "いとしい", mora: 4, type: "adj", label: "形容詞", elegance: 9, humor: 3 },
+    { word: "罪深い", reading: "つみぶかい", mora: 5, type: "adj", label: "形容詞", elegance: 5, humor: 8 },
+    { word: "眠れない", reading: "ねむれない", mora: 5, type: "adj", label: "形容詞", elegance: 7, humor: 5 },
+    { word: "無限", reading: "むげん", mora: 3, type: "adj", label: "形容詞", elegance: 6, humor: 7 },
+    { word: "眩しい", reading: "まぶしい", mora: 4, type: "adj", label: "形容詞", elegance: 8, humor: 3 },
+    { word: "孤独な", reading: "こどくな", mora: 4, type: "adj", label: "形容詞", elegance: 8, humor: 4 },
+
+    // 【助詞・助動詞・切れ字】(20)
+    { word: "は", reading: "は", mora: 1, type: "part", label: "助詞", elegance: 4, humor: 2 },
+    { word: "が", reading: "が", mora: 1, type: "part", label: "助詞", elegance: 4, humor: 2 },
+    { word: "を", reading: "を", mora: 1, type: "part", label: "助詞", elegance: 4, humor: 2 },
+    { word: "に", reading: "に", mora: 1, type: "part", label: "助詞", elegance: 4, humor: 2 },
+    { word: "の", reading: "の", mora: 1, type: "part", label: "助詞", elegance: 5, humor: 2 },
+    { word: "で", reading: "で", mora: 1, type: "part", label: "助詞", elegance: 4, humor: 2 },
+    { word: "と", reading: "と", mora: 1, type: "part", label: "助詞", elegance: 4, humor: 2 },
+    { word: "も", reading: "も", mora: 1, type: "part", label: "助詞", elegance: 4, humor: 3 },
+    { word: "へ", reading: "へ", mora: 1, type: "part", label: "助詞", elegance: 5, humor: 2 },
+    { word: "から", reading: "から", mora: 2, type: "part", label: "助詞", elegance: 4, humor: 3 },
+    { word: "まで", reading: "まで", mora: 2, type: "part", label: "助詞", elegance: 4, humor: 3 },
+    { word: "いた", reading: "いた", mora: 2, type: "part", label: "助動詞", elegance: 5, humor: 3 },
+    { word: "ます", reading: "ます", mora: 2, type: "part", label: "助動詞", elegance: 4, humor: 5 },
+    { word: "です", reading: "です", mora: 2, type: "part", label: "助動詞", elegance: 3, humor: 6 },
+    { word: "かな", reading: "かな", mora: 2, type: "part", label: "切れ字", elegance: 10, humor: 3 },
+    { word: "や", reading: "や", mora: 1, type: "part", label: "切れ字", elegance: 10, humor: 2 },
+    { word: "けり", reading: "けり", mora: 2, type: "part", label: "切れ字", elegance: 10, humor: 4 },
+    { word: "なり", reading: "なり", mora: 2, type: "part", label: "助動詞", elegance: 8, humor: 4 },
+    { word: "つつ", reading: "つつ", mora: 2, type: "part", label: "助詞", elegance: 8, humor: 3 },
+    { word: "よ", reading: "よ", mora: 1, type: "part", label: "切れ字", elegance: 7, humor: 4 }
+  ];
+
+  // --- ゲーム状態管理 ---
+  let state = {
+    mode: 'solo', // 'solo' | 'battle'
+    apiKey: '',
+    currentTheme: null,
+    handCards: [],
+    boardCards: [],
+    aiHandCards: [],
+    discardMode: false,
+    discardSelection: new Set(),
+    exchangesLeft: 1,
+    highScore: 0,
+    battleWins: 0,
+    battleTotal: 0,
+    uidCounter: 1,
+    isSubmitting: false
+  };
+
+  function loadStorage() {
+    try {
+      const savedHigh = localStorage.getItem('kotonohaiku_highscore');
+      const savedWins = localStorage.getItem('kotonohaiku_wins');
+      const savedTotal = localStorage.getItem('kotonohaiku_total');
+      const savedKey  = localStorage.getItem('kotonohaiku_gemini_key');
+      if (savedHigh) state.highScore = parseInt(savedHigh, 10) || 0;
+      if (savedWins) state.battleWins = parseInt(savedWins, 10) || 0;
+      if (savedTotal) state.battleTotal = parseInt(savedTotal, 10) || 0;
+      if (savedKey) state.apiKey = savedKey.trim();
+    } catch (e) {}
+    updateScoreHeader();
+    updateApiStatusBadge();
+  }
+
+  function saveRecords() {
+    try {
+      localStorage.setItem('kotonohaiku_highscore', String(state.highScore));
+      localStorage.setItem('kotonohaiku_wins', String(state.battleWins));
+      localStorage.setItem('kotonohaiku_total', String(state.battleTotal));
+    } catch (e) {}
+    updateScoreHeader();
+  }
+
+  function updateApiStatusBadge() {
+    const btn = document.getElementById('btnApiStatus');
+    if (state.apiKey) {
+      btn.className = 'api-status-badge api-connected';
+      btn.textContent = '● Gemini AI接続済';
+    } else {
+      btn.className = 'api-status-badge api-disconnected';
+      btn.textContent = '● Gemini API未設定';
+    }
+  }
+
+  window.toggleApiModal = function(show) {
+    const modal = document.getElementById('apiModal');
+    if (show) {
+      document.getElementById('apiKeyInput').value = state.apiKey || '';
+      modal.classList.add('show');
+    } else {
+      modal.classList.remove('show');
+    }
+  };
+
+  window.saveApiKey = function() {
+    const val = document.getElementById('apiKeyInput').value.trim();
+    if (!val) {
+      showToast('APIキーが空欄です。削除する場合は「キーを削除」を押してください。');
+      return;
+    }
+    if (!val.startsWith('AIza')) {
+      showToast('Gemini APIキーの形式（AIza...）と異なるようです。正しいキーか確認してください。');
+      return;
+    }
+    state.apiKey = val;
+    try {
+      localStorage.setItem('kotonohaiku_gemini_key', val);
+    } catch (e) {}
+    updateApiStatusBadge();
+    toggleApiModal(false);
+    showToast('Gemini APIキーを保存しました！本物のGemini宗匠が採点・対決を行います。', true);
+  };
+
+  window.clearApiKey = function() {
+    state.apiKey = '';
+    document.getElementById('apiKeyInput').value = '';
+    try {
+      localStorage.removeItem('kotonohaiku_gemini_key');
+    } catch (e) {}
+    updateApiStatusBadge();
+    toggleApiModal(false);
+    showToast('APIキーを削除しました。内蔵の擬似AIモードで動作します。', true);
+  };
+
+  function updateScoreHeader() {
+    const el = document.getElementById('scoreSummary');
+    if (state.mode === 'solo') {
+      el.innerHTML = `<span>最高記録</span><strong>${state.highScore} 点</strong>`;
+    } else {
+      el.innerHTML = `<span>AI対決戦績</span><strong>${state.battleWins}勝 / ${state.battleTotal}戦</strong>`;
+    }
+  }
+
+  window.switchMode = function(newMode) {
+    if (state.mode === newMode || state.isSubmitting) return;
+    state.mode = newMode;
+    document.getElementById('btnModeSolo').classList.toggle('active', newMode === 'solo');
+    document.getElementById('btnModeBattle').classList.toggle('active', newMode === 'battle');
+    updateScoreHeader();
+    startNewRound();
+  };
+
+  function showToast(msg, isInfo = false) {
+    const toast = document.getElementById('toastMsg');
+    toast.classList.toggle('info', isInfo);
+    document.getElementById('toastText').textContent = msg;
+    toast.classList.add('show');
+  }
+
+  window.hideToast = function() {
+    document.getElementById('toastMsg').classList.remove('show');
+  };
+
+  function dealCards(count, excludeWords = []) {
+    const kigos = WORD_POOL.filter(w => w.type === 'kigo' && !excludeWords.includes(w.word));
+    const nouns = WORD_POOL.filter(w => w.type === 'noun' && !excludeWords.includes(w.word));
+    const verbs = WORD_POOL.filter(w => w.type === 'verb' && !excludeWords.includes(w.word));
+    const adjs  = WORD_POOL.filter(w => w.type === 'adj' && !excludeWords.includes(w.word));
+    const parts = WORD_POOL.filter(w => w.type === 'part');
+
+    const pickedSet = new Set();
+    const result = [];
+
+    const pickUnique = (arr) => {
+      const candidates = arr.filter(item => !pickedSet.has(item.word));
+      const pool = candidates.length > 0 ? candidates : arr;
+      const chosen = pool[Math.floor(Math.random() * pool.length)] || WORD_POOL[0];
+      pickedSet.add(chosen.word);
+      return chosen;
+    };
+
+    if (count === 10) {
+      for (let i = 0; i < 2; i++) result.push(pickUnique(kigos));
+      for (let i = 0; i < 3; i++) result.push(pickUnique(nouns));
+      result.push(pickUnique(verbs));
+      result.push(pickUnique(adjs));
+      for (let i = 0; i < 3; i++) result.push(pickUnique(parts));
+    } else {
+      for (let i = 0; i < count; i++) {
+        result.push(pickUnique(WORD_POOL.filter(w => !excludeWords.includes(w.word))));
+      }
+    }
+
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+
+    return result.map(item => ({
+      ...item,
+      uid: state.uidCounter++
+    }));
+  }
+
+  window.startNewRound = function() {
+    if (state.isSubmitting) return;
+    hideToast();
+    document.getElementById('resultPanel').classList.remove('show');
+    document.getElementById('btnSubmit').disabled = false;
+
+    const candidates = THEMES.filter(t => !state.currentTheme || t.title !== state.currentTheme.title);
+    state.currentTheme = candidates[Math.floor(Math.random() * candidates.length)];
+
+    document.getElementById('themeTitle').textContent = `『${state.currentTheme.title}』`;
+    document.getElementById('themeDesc').textContent = state.currentTheme.desc;
+
+    state.boardCards = [];
+    state.handCards = dealCards(10);
+    state.aiHandCards = dealCards(10);
+
+    state.exchangesLeft = 1;
+    state.discardMode = false;
+    state.discardSelection.clear();
+
+    updateDiscardUI();
+    renderAll();
+  };
+
+  function renderAll() {
+    renderBoard();
+    renderHand();
+  }
+
+  function createCardElement(card, location) {
+    const div = document.createElement('div');
+    div.className = 'word-card';
+    if (location === 'hand' && state.discardMode && state.discardSelection.has(card.uid)) {
+      div.classList.add('discard-selected');
+    }
+
+    const tagClass = `tag-${card.type}`;
+    div.innerHTML = `
+      <span class="card-tag ${tagClass}">${card.label}</span>
+      <span class="card-word">${escapeHtml(card.word)}</span>
+      <span class="card-mora">${card.mora}音</span>
+    `;
+
+    div.onclick = () => handleCardClick(card.uid, location);
+    return div;
+  }
+
+  function renderBoard() {
+    const board = document.getElementById('tanzakuBoard');
+    const placeholder = document.getElementById('tanzakuPlaceholder');
+    const preview = document.getElementById('previewText');
+    const counter = document.getElementById('moraCounter');
+
+    Array.from(board.querySelectorAll('.word-card')).forEach(el => el.remove());
+
+    if (state.boardCards.length === 0) {
+      placeholder.style.display = 'block';
+      board.classList.remove('has-cards');
+      preview.textContent = '（ここに詠んだ句が表示されます）';
+      counter.textContent = '現在 0 音（目安: 17音前後）';
+      counter.classList.remove('good');
+    } else {
+      placeholder.style.display = 'none';
+      board.classList.add('has-cards');
+      state.boardCards.forEach(card => {
+        board.appendChild(createCardElement(card, 'board'));
+      });
+
+      const fullText = state.boardCards.map(c => c.word).join('');
+      const totalMora = state.boardCards.reduce((sum, c) => sum + c.mora, 0);
+      preview.textContent = `「 ${fullText} 」`;
+      counter.textContent = `現在 ${totalMora} 音（目安: 17音前後）`;
+
+      if (totalMora >= 15 && totalMora <= 19) {
+        counter.classList.add('good');
+      } else {
+        counter.classList.remove('good');
+      }
+    }
+  }
+
+  function renderHand() {
+    const grid = document.getElementById('handGrid');
+    grid.innerHTML = '';
+    state.handCards.forEach(card => {
+      grid.appendChild(createCardElement(card, 'hand'));
+    });
+  }
+
+  function handleCardClick(uid, location) {
+    if (state.isSubmitting) return;
+    hideToast();
+    if (location === 'hand') {
+      if (state.discardMode) {
+        if (state.discardSelection.has(uid)) {
+          state.discardSelection.delete(uid);
+        } else {
+          state.discardSelection.add(uid);
+        }
+        renderHand();
+      } else {
+        const idx = state.handCards.findIndex(c => c.uid === uid);
+        if (idx !== -1) {
+          const [moved] = state.handCards.splice(idx, 1);
+          state.boardCards.push(moved);
+          renderAll();
+        }
+      }
+    } else if (location === 'board') {
+      if (state.discardMode) {
+        showToast('手札入れ替えモード中は短冊からカードを戻せません。先に交換を確定またはキャンセルしてください。');
+        return;
+      }
+      const idx = state.boardCards.findIndex(c => c.uid === uid);
+      if (idx !== -1) {
+        const [moved] = state.boardCards.splice(idx, 1);
+        state.handCards.push(moved);
+        renderAll();
+      }
+    }
+  }
+
+  window.returnAllToHand = function() {
+    if (state.isSubmitting) return;
+    if (state.discardMode) {
+      showToast('手札入れ替えモード中は操作できません。');
+      return;
+    }
+    if (state.boardCards.length === 0) return;
+    state.handCards.push(...state.boardCards);
+    state.boardCards = [];
+    renderAll();
+  };
+
+  window.toggleDiscardMode = function() {
+    if (state.isSubmitting) return;
+    hideToast();
+    if (state.exchangesLeft <= 0 && !state.discardMode) {
+      showToast('このラウンドの手札入れ替えはすでに使用済みです。');
+      return;
+    }
+    state.discardMode = !state.discardMode;
+    state.discardSelection.clear();
+    updateDiscardUI();
+    renderHand();
+  };
+
+  window.selectAllForDiscard = function() {
+    if (!state.discardMode) return;
+    if (state.discardSelection.size === state.handCards.length) {
+      state.discardSelection.clear();
+    } else {
+      state.handCards.forEach(c => state.discardSelection.add(c.uid));
+    }
+    renderHand();
+  };
+
+  window.confirmDiscard = function() {
+    if (!state.discardMode) return;
+    const count = state.discardSelection.size;
+    if (count === 0) {
+      showToast('交換したい手札カードを1枚以上タップして選択してください（キャンセルする場合は「入れ替え中止」を押してください）。');
+      return;
+    }
+
+    const existingWords = [...state.handCards, ...state.boardCards].map(c => c.word);
+    state.handCards = state.handCards.filter(c => !state.discardSelection.has(c.uid));
+    const newCards = dealCards(count, existingWords);
+    state.handCards.push(...newCards);
+
+    state.exchangesLeft--;
+    state.discardMode = false;
+    state.discardSelection.clear();
+    updateDiscardUI();
+    renderHand();
+    showToast(`${count}枚の言の葉を入れ替えました！`, true);
+  };
+
+  function updateDiscardUI() {
+    const btnToggle = document.getElementById('btnToggleDiscard');
+    const btnAll = document.getElementById('btnDiscardAll');
+    const btnConfirm = document.getElementById('btnConfirmDiscard');
+    const handTitle = document.getElementById('handTitle');
+
+    if (state.discardMode) {
+      btnToggle.textContent = '入れ替え中止';
+      btnAll.style.display = 'inline-flex';
+      btnConfirm.style.display = 'inline-flex';
+      handTitle.textContent = '交換したいカードを選択中...';
+    } else {
+      btnToggle.textContent = `手札入れ替え（残${state.exchangesLeft}回）`;
+      btnToggle.disabled = state.exchangesLeft <= 0;
+      btnAll.style.display = 'none';
+      btnConfirm.style.display = 'none';
+      handTitle.textContent = '手札（タップで短冊へ）';
+    }
+  }
+
+  // --- 本物のGemini API呼び出し ---
+  async function evaluateWithGemini(playerCards, theme, isBattle) {
+    const playerText = playerCards.map(c => c.word).join('');
+    const playerMora = playerCards.reduce((s, c) => s + c.mora, 0);
+    const aiHandWords = state.aiHandCards.map(c => `${c.word}(${c.mora}音)`).join('、');
+
+    let prompt = `あなたはユーモアと教養を兼ね備えた俳句・川柳の審査員「AI宗匠」です。
+限られた単語カードを並べて句を作るカードゲーム「ことのはいく」の採点を行ってください。
+
+【お題】『${theme.title}』（${theme.desc}）
+【プレイヤーの句】「${playerText}」（合計${playerMora}音 / 使用カード: ${playerCards.map(c => c.word).join(' + ')}）
+
+以下の採点基準でプレイヤーの句を評価し、指定されたJSON形式のみで回答してください。
+・rhythmScore (0〜30点): 五・七・五（17音前後）のリズムの心地よさ。
+・themeScore (0〜30点): お題の情景やテーマとの合致度（意外な解釈での繋がりも高く評価）。
+・eleganceScore (0〜30点): 季語や言葉の美しさ・情景の浮かびやすさ。
+・humorScore (0〜30点): 面白さ、シュールな化学反応、韻の響き、無理やり繋げた妙味。
+・totalScore (0〜120点): 上記4項目の合計点。意味不明な羅列は低く、一見無茶苦茶でも情景や笑いが生まれていれば高く評価してください。
+・rank: 点数に応じた和風の称号（例: 「国宝級・神の一句」「天晴・特選」「秀逸・入選」「佳作」「迷句・珍句」など）。
+・comment: 句の情景へのリアルな感想、面白い組み合わせへのツッコミ、韻やリズムへの講評を120〜180文字程度の粋な日本語で記述してください。`;
+
+    if (isBattle) {
+      prompt += `
+
+さらに、今は「AI対決モード」です。あなた（AI宗匠）にも以下の10枚のカードが配られています。
+【AIの手札10枚】${aiHandWords}
+※必ず上記【AIの手札10枚】の中からカードを選んで並び替え（同じカードは1回まで、使わないカードがあってもよい）、合計17音前後になるようお題に沿った最高の一句を詠んでください。
+・aiUsedWords: あなたが選んだカードの単語文字列の配列（例: ["桜", "は", "団子", "を", "見る"]）。必ず手札にある単語そのままの表記にしてください。
+・aiHaikuText: あなたが選んだ単語を結合した句の文字列。
+・aiTotalScore (0〜120点): プレイヤーと同じ基準で公平に自己採点したあなたの句の合計点。
+・battleComment: プレイヤーの句とあなたの句を比較した対決の総評（commentの末尾に含めても可）。`;
+    }
+
+    const schemaProperties = {
+      rhythmScore: { type: "INTEGER" },
+      themeScore: { type: "INTEGER" },
+      eleganceScore: { type: "INTEGER" },
+      humorScore: { type: "INTEGER" },
+      totalScore: { type: "INTEGER" },
+      rank: { type: "STRING" },
+      comment: { type: "STRING" }
+    };
+    const requiredFields = ["rhythmScore", "themeScore", "eleganceScore", "humorScore", "totalScore", "rank", "comment"];
+
+    if (isBattle) {
+      schemaProperties.aiUsedWords = { type: "ARRAY", items: { type: "STRING" } };
+      schemaProperties.aiHaikuText = { type: "STRING" };
+      schemaProperties.aiTotalScore = { type: "INTEGER" };
+      requiredFields.push("aiUsedWords", "aiHaikuText", "aiTotalScore");
+    }
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(state.apiKey)}`;
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.85,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: schemaProperties,
+            required: requiredFields
+          }
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData?.error?.message || `HTTPエラー (${response.status})`);
+    }
+
+    const data = await response.json();
+    const rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!rawJsonText) {
+      throw new Error("Geminiからの応答が空でした。");
+    }
+
+    const parsed = JSON.parse(rawJsonText);
+    return {
+      isRealAi: true,
+      text: playerText,
+      totalMora: playerMora,
+      rhythmScore: Number(parsed.rhythmScore) || 0,
+      themeScore: Number(parsed.themeScore) || 0,
+      eleganceScore: Number(parsed.eleganceScore) || 0,
+      humorScore: Number(parsed.humorScore) || 0,
+      totalScore: Number(parsed.totalScore) || 0,
+      rank: parsed.rank || "入選",
+      comment: parsed.comment || "",
+      aiUsedWords: Array.isArray(parsed.aiUsedWords) ? parsed.aiUsedWords : [],
+      aiHaikuText: parsed.aiHaikuText || "",
+      aiTotalScore: Number(parsed.aiTotalScore) || 0
+    };
+  }
+
+  // --- フォールバック用：内蔵擬似AI採点エンジン ---
+  function evaluateHaikuLocal(cards, theme) {
+    const totalMora = cards.reduce((s, c) => s + c.mora, 0);
+    const text = cards.map(c => c.word).join('');
+
+    const diff = Math.abs(17 - totalMora);
+    let rhythmScore = Math.max(5, 30 - diff * 3);
+    let cum = 0, hit5 = false, hit12 = false;
+    for (const c of cards) {
+      cum += c.mora;
+      if (cum === 5) hit5 = true;
+      if (cum === 12) hit12 = true;
+    }
+    if (hit5 && hit12 && totalMora === 17) rhythmScore = Math.min(30, rhythmScore + 6);
+
+    let themeMatches = 0;
+    cards.forEach(c => { if (theme.keywords.includes(c.word)) themeMatches++; });
+    const themeScore = Math.min(30, 8 + themeMatches * 10);
+
+    const kigoCount = cards.filter(c => c.type === 'kigo').length;
+    const avgElegance = cards.reduce((s, c) => s + c.elegance, 0) / cards.length;
+    let eleganceScore = Math.round(avgElegance * 2.5) + (kigoCount === 1 ? 5 : 0);
+    eleganceScore = Math.max(5, Math.min(30, eleganceScore));
+
+    const avgHumor = cards.reduce((s, c) => s + c.humor, 0) / cards.length;
+    let humorScore = Math.round(avgHumor * 2.4);
+    const hasHighElegance = cards.some(c => c.elegance >= 8);
+    const hasHighHumor = cards.some(c => c.humor >= 8);
+    if (hasHighElegance && hasHighHumor) humorScore += 6;
+    humorScore = Math.max(5, Math.min(30, humorScore));
+
+    const totalScore = Math.min(120, rhythmScore + themeScore + eleganceScore + humorScore);
+
+    let rank = "凡作";
+    if (totalScore >= 100) rank = "国宝級・神の一句";
+    else if (totalScore >= 85) rank = "天晴・特選";
+    else if (totalScore >= 70) rank = "秀逸・入選";
+    else if (totalScore >= 55) rank = "佳作";
+    else rank = "迷句・珍句";
+
+    const comment = `【内蔵擬似AI判定】全${totalMora}音のリズムで『${theme.title}』に挑戦した意欲作です！（※右上の「Gemini API未設定」からAPIキーを登録すると、本物のAIが句の意味を深く読み取ってツッコミを入れてくれます）`;
+
+    return {
+      isRealAi: false,
+      cards,
+      text,
+      totalMora,
+      totalScore,
+      rhythmScore,
+      themeScore,
+      eleganceScore,
+      humorScore,
+      rank,
+      comment
+    };
+  }
+
+  function generateAiHaikuLocal(theme) {
+    const available = [...state.aiHandCards];
+    let bestEval = null;
+    for (let trial = 0; trial < 70; trial++) {
+      const shuffled = [...available].sort(() => Math.random() - 0.5);
+      const combo = [];
+      let mora = 0;
+      for (const card of shuffled) {
+        if (mora + card.mora <= 18) {
+          combo.push(card);
+          mora += card.mora;
+        }
+        if (mora >= 16) break;
+      }
+      if (combo.length >= 2) {
+        const ev = evaluateHaikuLocal(combo, theme);
+        if (!bestEval || ev.totalScore > bestEval.totalScore) {
+          bestEval = ev;
+        }
+      }
+    }
+    const chosen = bestEval || evaluateHaikuLocal(available.slice(0, 4), theme);
+    return {
+      aiUsedWords: chosen.cards.map(c => c.word),
+      aiHaikuText: chosen.text,
+      aiTotalScore: chosen.totalScore
+    };
+  }
+
+  // --- 一句提出処理 ---
+  window.submitHaiku = async function() {
+    if (state.isSubmitting) return;
+    hideToast();
+
+    if (state.discardMode) {
+      showToast('手札入れ替えの選択中です。先に「選択カードを交換確定」または「入れ替え中止」を押してください。');
+      return;
+    }
+    if (state.boardCards.length === 0) {
+      showToast('短冊に言葉が1枚も置かれていません。手札からカードをタップして並べてください。');
+      return;
+    }
+    if (state.boardCards.length === 1) {
+      showToast('言葉が1枚だけでは句になりません。2枚以上の言葉を組み合わせてください。');
+      return;
+    }
+
+    state.isSubmitting = true;
+    document.getElementById('btnSubmit').disabled = true;
+    document.getElementById('resultPanel').classList.remove('show');
+
+    const loadingEl = document.getElementById('loadingOverlay');
+    if (state.apiKey) {
+      document.getElementById('loadingText').textContent = state.mode === 'battle'
+        ? 'Gemini宗匠が手札から句を詠み、両者の優劣を吟味しています…'
+        : 'Gemini宗匠があなたの一句をリアルタイム採点しています…';
+      loadingEl.classList.add('show');
+    }
+
+    let resultData = null;
+
+    try {
+      if (state.apiKey) {
+        resultData = await evaluateWithGemini(state.boardCards, state.currentTheme, state.mode === 'battle');
+      } else {
+        resultData = evaluateHaikuLocal(state.boardCards, state.currentTheme);
+        if (state.mode === 'battle') {
+          const aiLocal = generateAiHaikuLocal(state.currentTheme);
+          Object.assign(resultData, aiLocal);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(`Gemini API通信エラー（${err.message}）のため、内蔵AIで採点しました。APIキーや利用枠を確認してください。`);
+      resultData = evaluateHaikuLocal(state.boardCards, state.currentTheme);
+      if (state.mode === 'battle') {
+        const aiLocal = generateAiHaikuLocal(state.currentTheme);
+        Object.assign(resultData, aiLocal);
+      }
+    } finally {
+      loadingEl.classList.remove('show');
+      state.isSubmitting = false;
+    }
+
+    renderResult(resultData);
+  };
+
+  function renderResult(res) {
+    document.getElementById('engineUsedTag').textContent = res.isRealAi
+      ? '✨ Gemini 2.5 Flash リアルAI審査'
+      : '⚙️ 内蔵擬似AI判定（APIキー未設定）';
+
+    document.getElementById('resultRank').textContent = res.rank;
+    document.getElementById('resultScore').innerHTML = `${res.totalScore} <small>点</small>`;
+    document.getElementById('submittedHaikuDisplay').textContent = `『 ${res.text} 』`;
+    document.getElementById('aiCommentText').textContent = res.comment;
+
+    document.getElementById('breakdownGrid').innerHTML = `
+      <div class="breakdown-item"><span class="label">調べ・音数 (${res.totalMora}音)</span><span class="val">${res.rhythmScore} / 30</span></div>
+      <div class="breakdown-item"><span class="label">お題との調和</span><span class="val">${res.themeScore} / 30</span></div>
+      <div class="breakdown-item"><span class="label">風情・情景</span><span class="val">${res.eleganceScore} / 30</span></div>
+      <div class="breakdown-item"><span class="label">面白・韻・妙味</span><span class="val">${res.humorScore} / 30</span></div>
+    `;
+
+    const battleArea = document.getElementById('battleResultArea');
+    if (state.mode === 'battle') {
+      battleArea.style.display = 'block';
+
+      const aiScore = res.aiTotalScore || 0;
+      const aiText = res.aiHaikuText || (res.aiUsedWords ? res.aiUsedWords.join('') : '（詠み悩み中）');
+
+      document.getElementById('battlePlayerHaiku').textContent = res.text;
+      document.getElementById('battlePlayerPts').textContent = `${res.totalScore} 点`;
+      document.getElementById('battleAiHaiku').textContent = aiText;
+      document.getElementById('battleAiPts').textContent = `${aiScore} 点`;
+
+      // AI手札のハイライト表示（同じ単語が複数ある場合も1つずつ消費して正確にハイライト）
+      const remainingUsed = [...(res.aiUsedWords || [])];
+      const chipsContainer = document.getElementById('aiHandChips');
+      chipsContainer.innerHTML = state.aiHandCards.map(c => {
+        const matchIdx = remainingUsed.indexOf(c.word);
+        let isUsed = false;
+        if (matchIdx !== -1) {
+          isUsed = true;
+          remainingUsed.splice(matchIdx, 1);
+        }
+        return `<span class="ai-chip ${isUsed ? 'used' : ''}">${escapeHtml(c.word)}</span>`;
+      }).join('');
+
+      const pCard = document.getElementById('playerBattleCard');
+      const aCard = document.getElementById('aiBattleCard');
+      const banner = document.getElementById('winnerBanner');
+
+      pCard.classList.remove('winner');
+      aCard.classList.remove('winner');
+      banner.className = 'winner-banner';
+
+      state.battleTotal++;
+      if (res.totalScore > aiScore) {
+        state.battleWins++;
+        pCard.classList.add('winner');
+        banner.classList.add('win-player');
+        banner.textContent = `見事勝利！ AI宗匠に ${res.totalScore - aiScore} 点差で勝ちました！`;
+      } else if (res.totalScore < aiScore) {
+        aCard.classList.add('winner');
+        banner.classList.add('win-ai');
+        banner.textContent = `惜敗… AI宗匠の一句に ${aiScore - res.totalScore} 点及びませんでした`;
+      } else {
+        banner.classList.add('win-draw');
+        banner.textContent = `引き分け！ AI宗匠と全く同じ評価点です`;
+      }
+      saveRecords();
+    } else {
+      battleArea.style.display = 'none';
+      if (res.totalScore > state.highScore) {
+        state.highScore = res.totalScore;
+        saveRecords();
+      }
+    }
+
+    const panel = document.getElementById('resultPanel');
+    panel.classList.add('show');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  window.toggleHelp = function(show) {
+    document.getElementById('helpModal').classList.toggle('show', show);
+  };
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, m => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[m]));
+  }
+
+  loadStorage();
+  startNewRound();
+})();
+</script>
+</body>
+</html>
